@@ -2,9 +2,8 @@
 
 namespace App\Entity;
 
+use App\Enum\RoleEnum;
 use App\Repository\RankRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RankRepository::class)]
@@ -18,19 +17,8 @@ class Rank
     #[ORM\Column(length: 20)]
     private ?string $rolename = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $role = null;
-
-    /**
-     * @var Collection<int, UserSiteRank>
-     */
-    #[ORM\OneToMany(targetEntity: UserSiteRank::class, mappedBy: 'role', orphanRemoval: true)]
-    private Collection $userSiteRanks;
-
-    public function __construct()
-    {
-        $this->userSiteRanks = new ArrayCollection();
-    }
+    #[ORM\Column(type: 'string', length: 255, enumType: RoleEnum::class)]
+    private ?RoleEnum $role = RoleEnum::USER;
 
     public function getId(): ?int
     {
@@ -42,51 +30,15 @@ class Rank
         return $this->rolename;
     }
 
-    public function setRolename(string $rolename): static
-    {
-        $this->rolename = $rolename;
-
-        return $this;
-    }
-
-    public function getRole(): ?string
+    public function getRole(): ?RoleEnum
     {
         return $this->role;
     }
 
-    public function setRole(string $role): static
+    public function setRole(RoleEnum $role): self
     {
         $this->role = $role;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, UserSiteRank>
-     */
-    public function getUserSiteRanks(): Collection
-    {
-        return $this->userSiteRanks;
-    }
-
-    public function addUserSiteRank(UserSiteRank $userSiteRank): static
-    {
-        if (!$this->userSiteRanks->contains($userSiteRank)) {
-            $this->userSiteRanks->add($userSiteRank);
-            $userSiteRank->setRole($this);
-        }
-
-        return $this;
-    }
-
-    public function removeUserSiteRank(UserSiteRank $userSiteRank): static
-    {
-        if ($this->userSiteRanks->removeElement($userSiteRank)) {
-            // set the owning side to null (unless already changed)
-            if ($userSiteRank->getRole() === $this) {
-                $userSiteRank->setRole(null);
-            }
-        }
+        $this->rolename = $role?->label();
 
         return $this;
     }
