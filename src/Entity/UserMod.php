@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\UserStatusEnum;
 use App\Repository\UserModRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -17,8 +18,8 @@ class UserMod
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
 
-    #[ORM\Column(length: 20)]
-    private ?string $status = null;
+    #[ORM\Column(type: 'string', length: 20, enumType: UserStatusEnum::class)]
+    private ?UserStatusEnum $status = UserStatusEnum::ACTIVE;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $statusAt = null;
@@ -52,12 +53,12 @@ class UserMod
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getStatus(): ?UserStatusEnum
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): static
+    public function setStatus(UserStatusEnum $status): self
     {
         $this->status = $status;
 
