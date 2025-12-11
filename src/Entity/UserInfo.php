@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UserInfoRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserInfoRepository::class)]
@@ -31,6 +32,12 @@ class UserInfo
 
     #[ORM\Column(length: 50)]
     private ?string $ip = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new DateTimeImmutable();
+        $this->ip = $_SERVER['REMOTE_ADDR'];
+    }
 
     public function getId(): ?int
     {

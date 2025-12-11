@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UserStatsRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserStatsRepository::class)]
@@ -40,6 +41,16 @@ class UserStats
 
     #[ORM\Column]
     private ?int $numberOfBanned = null;
+
+    public function __construct()
+    {
+        $this->lastPageVisited = '/';
+        $this->lastPageVisitedAt = new DateTimeImmutable();
+        $this->numberPageVisited = 0;
+        $this->numberOfBlocked = 0;
+        $this->numberOfBanned = 0;
+        $this->loginAttempts = 0;
+    }
 
     public function getId(): ?int
     {

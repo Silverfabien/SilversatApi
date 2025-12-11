@@ -7,6 +7,7 @@ use App\Repository\RankRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RankRepository::class)]
+#[ORM\Table(name: '`api-rank`')]
 class Rank
 {
     #[ORM\Id]
