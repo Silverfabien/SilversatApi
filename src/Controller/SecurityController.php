@@ -14,6 +14,7 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -38,7 +39,7 @@ final class SecurityController extends AbstractController
     #[Route('/check_token', name: 'check_token', methods: ['GET'])]
     public function checkToken():JsonResponse
     {
-        return new JsonResponse(["status" => "Ok"], Response::HTTP_OK);
+        return new JsonResponse(["message" => "Ok"], Response::HTTP_OK);
     }
 
     /**
@@ -82,6 +83,32 @@ final class SecurityController extends AbstractController
         $content['message'] = "Compte créer avec succès.";
         $response->setData($content);
         $response->setStatusCode(Response::HTTP_CREATED);
+
+        return $response;
+    }
+
+    #[Route('/logout', name: 'logout', methods: ['POST'])]
+    public function logout(Request $request): JsonResponse
+    {
+        if (!$request->cookies->get('jwt_token')) {
+            return new JsonResponse(["message" => "Vous êtes déjà déconnecté."], Response::HTTP_OK);
+        }
+
+        $response = new JsonResponse(["message" => "Vous êtes dorénavant déconnecté."], Response::HTTP_OK);
+
+        $response->headers->setCookie(
+            Cookie::create(
+                'jwt_token',
+                null, // Valeur nulle (supprime le cookie)
+                new DateTimeImmutable('-1 hour'),
+                '/',
+                '127.0.0.1',
+                true,
+                true,
+                false,
+                Cookie::SAMESITE_NONE
+            )
+        );
 
         return $response;
     }
