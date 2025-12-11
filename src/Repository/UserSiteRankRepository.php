@@ -16,28 +16,9 @@ class UserSiteRankRepository extends ServiceEntityRepository
         parent::__construct($registry, UserSiteRank::class);
     }
 
-    //    /**
-    //     * @return UserSiteRank[] Returns an array of UserSiteRank objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('u.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?UserSiteRank
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function save($userSiteRank): void
+    {
+        $this->getEntityManager()->persist($userSiteRank);
+        $this->getEntityManager()->flush();
+    }
 }

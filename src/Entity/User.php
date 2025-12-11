@@ -10,7 +10,6 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -55,6 +54,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->userSiteRanks = new ArrayCollection();
+        $this->isVerify = false;
     }
 
     public function getId(): ?int
@@ -90,6 +90,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         return [];
+    }
+
+    public function getRolesAllSite(): array
+    {
+        $rolesAllSite = [];
+        foreach ($this->getUserSiteRanks() as $userSiteRank) {
+            $siteName = $userSiteRank->getSite()->getName();
+            $roleName = $userSiteRank->getRole()->getRole();
+
+            $rolesAllSite[$siteName] = $roleName;
+        }
+
+        return $rolesAllSite;
     }
 
     /**

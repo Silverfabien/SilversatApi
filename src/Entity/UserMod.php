@@ -21,7 +21,7 @@ class UserMod
     #[ORM\Column(type: 'string', length: 20, enumType: UserStatusEnum::class)]
     private ?UserStatusEnum $status = UserStatusEnum::ACTIVE;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $statusAt = null;
 
     #[ORM\Column(nullable: true)]
@@ -35,6 +35,11 @@ class UserMod
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $accountDeletedAt = null;
+
+    public function __construct()
+    {
+        $this->accountDeleted = false;
+    }
 
     public function getId(): ?int
     {
