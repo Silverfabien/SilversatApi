@@ -23,7 +23,8 @@
         "symfony/security-bundle": "7.4.*",
         "symfony/twig-bundle": "7.4.*",
         "symfony/uid": "7.4.*",
-        "symfony/yaml": "7.4.*"
+        "symfony/yaml": "7.4.*",
+        "ext-http": "*"
     },
     "require-dev": {
         "symfony/maker-bundle": "^1.65"
