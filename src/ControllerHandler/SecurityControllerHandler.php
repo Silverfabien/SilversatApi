@@ -32,10 +32,7 @@ readonly class SecurityControllerHandler
         private UserModRepository $userModRepository,
         private UserSecurityRepository $userSecurityRepository,
         private UserStatsRepository $userStatsRepository,
-    )
-    {
-
-    }
+    ) {}
 
     public function createUser(User $user): bool
     {
@@ -112,6 +109,29 @@ readonly class SecurityControllerHandler
         $search->setConfirmationTokenExpirationAt(new DateTimeImmutable('+30 minutes'));
 
         $this->userRepository->update($search);
+
+        return true;
+    }
+
+    public function forgotPassword(User $user): bool
+    {
+        $token = Uuid::v4()->toRfc4122();
+        $user->getUserSecurity()->setResetPasswordToken($token);
+        $user->getUserSecurity()->setResetPasswordTokenExpirationAt(new DateTimeImmutable('+30 minutes'));
+
+        $this->userRepository->update($user);
+
+        return true;
+    }
+
+    public function resetForgotPassword(User $user): bool
+    {
+        $password = $this->userPasswordHasher->hashPassword($user, $user->getPassword());
+        $user->setPassword($password);
+        $user->getUserSecurity()->setResetPasswordToken(null);
+        $user->getUserSecurity()->setResetPasswordTokenExpirationAt(null);
+
+        $this->userRepository->update($user);
 
         return true;
     }
