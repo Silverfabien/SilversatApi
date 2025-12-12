@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\UserSecurityRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Random\RandomException;
+use function Sodium\randombytes_random16;
 
 #[ORM\Entity(repositoryClass: UserSecurityRepository::class)]
 class UserSecurity
@@ -28,6 +30,17 @@ class UserSecurity
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $resetPasswordTokenExpirationAt = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $iv = null;
+
+    /**
+     * @throws RandomException
+     */
+    public function __construct()
+    {
+        $this->iv = base64_encode(random_bytes(openssl_cipher_iv_length('AES-256-CBC')));
+    }
 
     public function getId(): ?int
     {
@@ -90,6 +103,18 @@ class UserSecurity
     public function setResetPasswordTokenExpirationAt(?\DateTimeImmutable $resetPasswordTokenExpirationAt): static
     {
         $this->resetPasswordTokenExpirationAt = $resetPasswordTokenExpirationAt;
+
+        return $this;
+    }
+
+    public function getIv(): ?string
+    {
+        return $this->iv;
+    }
+
+    public function setIv(string $iv): static
+    {
+        $this->iv = $iv;
 
         return $this;
     }
