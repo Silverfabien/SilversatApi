@@ -26,3 +26,4 @@ services:
     App\Security\JWTSuccessHandler:
         arguments:
             $jwtManager: '@lexik_jwt_authentication.jwt_manager'
+            $cookieDomain: '%env(COOKIE_DOMAIN)%'
