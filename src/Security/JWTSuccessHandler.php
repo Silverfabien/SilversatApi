@@ -18,9 +18,16 @@ class JWTSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
     private JWTTokenManagerInterface $jwtManager;
     private EventDispatcherInterface $eventDispatcher;
-    public function __construct(JWTTokenManagerInterface $jwtManager, EventDispatcherInterface $eventDispatcher) {
+    private string $cookieDomain;
+
+    public function __construct(
+        JWTTokenManagerInterface $jwtManager,
+        EventDispatcherInterface $eventDispatcher,
+        string $cookieDomain
+    ) {
         $this->jwtManager = $jwtManager;
         $this->eventDispatcher = $eventDispatcher;
+        $this->cookieDomain = $cookieDomain;
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token): Response
@@ -50,7 +57,7 @@ class JWTSuccessHandler implements AuthenticationSuccessHandlerInterface
                 $jwt,
                 new DateTimeImmutable('+7 days'),
                 '/',
-                '127.0.0.1',
+                $this->cookieDomain,
                 true,
                 true,
                 false,
