@@ -9,6 +9,7 @@ use App\Form\UserType;
 use App\Message\UserCreated;
 use App\Repository\UserRepository;
 use App\Repository\UserSecurityRepository;
+use App\Repository\UserStatsRepository;
 use App\Security\JWTSuccessHandler;
 use DateTimeImmutable;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -34,7 +35,9 @@ final class SecurityController extends AbstractController
         private readonly UserSecurityRepository $userSecurityRepository,
         private readonly UserRepository $userRepository,
         private readonly ParameterBagInterface $params,
-        private readonly MailerInterface $mailer
+        private readonly MailerInterface $mailer,
+        private readonly UserStatsRepository $userStatsRepository,
+        private readonly UrlGeneratorInterface $urlGenerator
     ) {}
 
     #[Route('/check_token', name: 'check_token', methods: ['GET'])]
@@ -72,7 +75,7 @@ final class SecurityController extends AbstractController
             return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        $this->securityControllerHandler->createUser($user);
+        $this->securityControllerHandler->createUser($user, $data['url']);
 
         $messageBus->dispatch(new UserCreated($user->getId(), $user->getUsername(), $user->getEmail()));
 
@@ -234,10 +237,12 @@ final class SecurityController extends AbstractController
      */
     private function mailConfirm(User $user): void
     {
-        $search = $this->userSecurityRepository->findOneBy(['user' => $user->getId()]);
+        $userSecurity = $this->userSecurityRepository->findOneBy(['user' => $user->getId()]);
+        $userStats = $this->userStatsRepository->findOneBy(['user' => $user->getId()]);
 
-        $urlConfirm = $this->generateUrl('api_confirm', ['token' => $search->getConfirmationToken()], UrlGeneratorInterface::ABSOLUTE_URL);
-        $urlRemove = $this->generateUrl('api_remove_account', ['token' => $search->getConfirmationToken()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $url = $userStats->getRegisterOn();
+        $urlConfirm = $url.'/confirm/'.$userSecurity->getConfirmationToken();
+        $urlRemove = $url.'/remove-account/'.$userSecurity->getConfirmationToken();
 
         $from = $this->params->get('email_from');
 
@@ -260,9 +265,11 @@ final class SecurityController extends AbstractController
      */
     private function mailForgotPassword(User $user): void
     {
-        $search = $this->userSecurityRepository->findOneBy(['user' => $user->getId()]);
+        $userSecurity = $this->userSecurityRepository->findOneBy(['user' => $user->getId()]);
+        $userStats = $this->userStatsRepository->findOneBy(['user' => $user->getId()]);
 
-        $url = $this->generateUrl('api_reset_forgot_password', ['token' => $search->getResetPasswordToken()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $url = $userStats->getRegisterOn();
+        $urlForgotPassword = $url.'/reset-forgot-password/'.$userSecurity->getResetPasswordToken();
 
         $from = $this->params->get('email_from');
 
@@ -273,8 +280,8 @@ final class SecurityController extends AbstractController
             ->htmlTemplate('mail/forgot-password.html.twig')
             ->context([
                 'user' => $user,
-                'search' => $search,
-                'url' => $url,
+                'userSecurity' => $userSecurity,
+                'url' => $urlForgotPassword,
             ]);
 
         $this->mailer->send($mail);
