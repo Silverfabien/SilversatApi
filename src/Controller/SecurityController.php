@@ -25,7 +25,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[Route('/api', name: 'api_')]
 final class SecurityController extends AbstractController
@@ -37,7 +36,6 @@ final class SecurityController extends AbstractController
         private readonly ParameterBagInterface $params,
         private readonly MailerInterface $mailer,
         private readonly UserStatsRepository $userStatsRepository,
-        private readonly UrlGeneratorInterface $urlGenerator
     ) {}
 
     #[Route('/check_token', name: 'check_token', methods: ['GET'])]
@@ -127,7 +125,7 @@ final class SecurityController extends AbstractController
         return new JsonResponse(['message' => "Votre compte à bien été validé."], Response::HTTP_OK);
     }
 
-    #[Route('/remove-account/{token}', name: 'remove_account', methods: ['GET', 'DELETE'])]
+    #[Route('/remove_account/{token}', name: 'remove_account', methods: ['GET', 'DELETE'])]
     public function removeAccount(string $token): JsonResponse
     {
         $user = $this->userSecurityRepository->findOneBy(['confirmationToken' => $token]);
@@ -169,7 +167,7 @@ final class SecurityController extends AbstractController
     /**
      * @throws TransportExceptionInterface
      */
-    #[Route('/forgot-password', name: 'forgot_password', methods: ['POST'])]
+    #[Route('/forgot_password', name: 'forgot_password', methods: ['POST'])]
     public function forgotPassword(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -187,7 +185,7 @@ final class SecurityController extends AbstractController
         return new JsonResponse($msg, Response::HTTP_OK);
     }
 
-    #[Route('/reset-forgot-password/{token}', name: 'reset_forgot_password', methods: ['POST'])]
+    #[Route('/reset_forgot_password/{token}', name: 'reset_forgot_password', methods: ['POST'])]
     public function resetForgotPassword(
         Request $request,
         string $token,
