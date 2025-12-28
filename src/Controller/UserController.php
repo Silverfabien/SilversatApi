@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\ControllerHandler\UserControllerHandler;
 use App\Entity\User;
+use App\Form\Security\ResetPasswordType;
+use App\Form\Security\UserEditType;
 use App\Repository\UserRepository;
 use App\Security\JWTSuccessHandler;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,6 +27,19 @@ final class UserController extends AbstractController
     public function userEdit(Request $request): JsonResponse
     {
         $user = $this->decodeJwt($request);
+        $data = json_decode($request->getContent(), true);
+
+        $form = $this->createForm(UserEditType::class);
+        $form->submit($data);
+
+        if (!$form->isValid()) {
+            $errors = [];
+            foreach ($form->getErrors(true) as $error) {
+                $errors[] = $error->getMessage();
+            }
+
+            return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
 
         $this->userControllerHandler->userEdit($user, $request->toArray());
 
@@ -38,8 +53,21 @@ final class UserController extends AbstractController
     public function resetPassword(Request $request): JsonResponse
     {
         $user = $this->decodeJwt($request);
+        $data = json_decode($request->getContent(), true);
 
-        $this->userControllerHandler->resetPassword($user, $request->toArray());
+        $form = $this->createForm(ResetPasswordType::class, $user);
+        $form->submit($data);
+
+        if (!$form->isValid()) {
+            $errors = [];
+            foreach ($form->getErrors(true) as $error) {
+                $errors[] = $error->getMessage();
+            }
+
+            return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->userControllerHandler->resetPassword($user);
 
         return $this->generateResponse(
             'Votre mot de passe a bien été modifié.',

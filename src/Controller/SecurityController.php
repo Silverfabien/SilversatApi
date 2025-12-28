@@ -4,8 +4,8 @@ namespace App\Controller;
 
 use App\ControllerHandler\SecurityControllerHandler;
 use App\Entity\User;
-use App\Form\ForgotPasswordType;
-use App\Form\UserType;
+use App\Form\Security\ForgotPasswordType;
+use App\Form\Security\RegisterType;
 use App\Message\UserCreated;
 use App\Repository\UserRepository;
 use App\Repository\UserSecurityRepository;
@@ -51,29 +51,26 @@ final class SecurityController extends AbstractController
     #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(
         Request $request,
-        FormFactoryInterface $formFactory,
         MessageBusInterface $messageBus,
         JWTSuccessHandler $jwtSuccessHandler
     ): JsonResponse
     {
         $user = new User();
-        $form = $formFactory->create(UserType::class, $user);
         $data = json_decode($request->getContent(), true);
+
+        $form = $this->createForm(RegisterType::class, $user);
         $form->submit($data);
 
         if (!$form->isValid()) {
             $errors = [];
             foreach ($form->getErrors(true) as $error) {
-                $errors[] = [
-                    'field' => $error->getOrigin()->getName(),
-                    'message' => $error->getMessage(),
-                ];
+                $errors[] = $error->getMessage();
             }
 
             return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        $this->securityControllerHandler->createUser($user, $data['url']);
+        $this->securityControllerHandler->createUser($user, $request->toArray());
 
         $messageBus->dispatch(new UserCreated($user->getId(), $user->getUsername(), $user->getEmail()));
 
@@ -199,20 +196,18 @@ final class SecurityController extends AbstractController
             return new JsonResponse(["message" => "Token invalide ou expiré."], Response::HTTP_BAD_REQUEST);
         }
 
-        $form = $formFactory->create(ForgotPasswordType::class, $user->getUser());
         $data = json_decode($request->getContent(), true);
+
+        $form = $this->createForm(ForgotPasswordType::class, $user);
         $form->submit($data);
 
         if (!$form->isValid()) {
             $errors = [];
             foreach ($form->getErrors(true) as $error) {
-                $errors[] = [
-                    'field' => $error->getOrigin()->getName(),
-                    'message' => $error->getMessage(),
-                ];
+                $errors[] = $error->getMessage();
             }
 
-            return new JsonResponse(['message' => $errors], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
         $this->securityControllerHandler->resetForgotPassword($user->getUser());
