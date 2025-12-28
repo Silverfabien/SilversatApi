@@ -33,6 +33,7 @@ readonly class UserControllerHandler
     {
         $password = $this->userPasswordHasher->hashPassword($user, $data['password']);
         $user->setPassword($password);
+        $user->getUserStats()->setLastPasswordChangedAt(new DateTimeImmutable());
 
         $this->userRepository->update($user);
 

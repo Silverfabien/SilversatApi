@@ -28,12 +28,10 @@ final class UserController extends AbstractController
 
         $this->userControllerHandler->userEdit($user, $request->toArray());
 
-        $response = $this->jwtSuccessHandler->generateJwtResponse($user);
-        $content['message'] = "Vos informations ont bien été modifié.";
-        $response->setData($content);
-        $response->setStatusCode(Response::HTTP_OK);
-
-        return $response;
+        return $this->generateResponse(
+            'Vos informations on bien été modifié.',
+            $user
+        );
     }
 
     #[Route('/reset_password', name: 'reset_password', methods: ['POST'])]
@@ -43,12 +41,10 @@ final class UserController extends AbstractController
 
         $this->userControllerHandler->resetPassword($user, $request->toArray());
 
-        $response = $this->jwtSuccessHandler->generateJwtResponse($user);
-        $content['message'] = "Votre mot de passe à bien été modifié.";
-        $response->setData($content);
-        $response->setStatusCode(Response::HTTP_OK);
-
-        return $response;
+        return $this->generateResponse(
+            'Votre mot de passe a bien été modifié.',
+            $user
+        );
     }
 
     private function decodeJwt(Request $request): ?User
@@ -62,5 +58,15 @@ final class UserController extends AbstractController
         }
 
         return $user;
+    }
+
+    private function generateResponse(string $message, User $user): JsonResponse
+    {
+        $response = $this->jwtSuccessHandler->generateJwtResponse($user);
+        $content['message'] = $message;
+        $response->setData($content);
+        $response->setStatusCode(Response::HTTP_OK);
+
+        return $response;
     }
 }
