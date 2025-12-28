@@ -34,11 +34,12 @@ readonly class SecurityControllerHandler
         private UserStatsRepository $userStatsRepository,
     ) {}
 
-    public function createUser(User $user, string $url): bool
+    public function createUser(User $user, array $data): bool
     {
         // Create User
         $password = $this->userPasswordHasher->hashPassword($user, $user->getPassword());
         $user->setPassword($password);
+
 
         // Create UserSiteRank
         $allSites = $this->siteRepository->findAll();
@@ -75,7 +76,7 @@ readonly class SecurityControllerHandler
         // Create UserStats
         $userStats = new UserStats();
         $userStats->setUser($user);
-        $userStats->setRegisterOn($url);
+        $userStats->setRegisterOn($data['url']);
 
         $this->userStatsRepository->save($userStats);
 
