@@ -82,6 +82,15 @@ readonly class SecurityControllerHandler
         return true;
     }
 
+    public function login(User $user, string $url): bool
+    {
+        $user->getUserStats()->setLastLoginAt(new DateTimeImmutable());
+        $user->getUserStats()->setLoginOn($url);
+
+        $this->userRepository->update($user);
+        return true;
+    }
+
     public function verifyAccount(UserSecurity $userSecurity): bool
     {
         $userSecurity->getUser()->setIsVerify(true);

@@ -80,6 +80,7 @@ final class SecurityController extends AbstractController
         $this->sendVerificationMail($user);
 
         // Permet la connexion automatiquement après inscription.
+        $this->securityControllerHandler->login($user, $data['url']);
         $response = $jwtSuccessHandler->generateJwtResponse($user);
         $content = json_decode($response->getContent(), true);
         $content['message'] = "Compte créer avec succès.";

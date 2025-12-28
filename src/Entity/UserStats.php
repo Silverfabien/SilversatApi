@@ -36,6 +36,9 @@ class UserStats
     #[ORM\Column(length: 255)]
     private ?string $registerOn = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $loginOn = null;
+
     public function __construct()
     {
         $this->numberOfBlocked = 0;
@@ -128,6 +131,18 @@ class UserStats
     public function setRegisterOn(string $registerOn): static
     {
         $this->registerOn = $registerOn;
+
+        return $this;
+    }
+
+    public function getLoginOn(): ?string
+    {
+        return $this->loginOn;
+    }
+
+    public function setLoginOn(string $loginOn): static
+    {
+        $this->loginOn = $loginOn;
 
         return $this;
     }
