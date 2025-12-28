@@ -29,9 +29,9 @@ readonly class UserControllerHandler
         return true;
     }
 
-    public function resetPassword(User $user, array $data): bool
+    public function resetPassword(User $user): bool
     {
-        $password = $this->userPasswordHasher->hashPassword($user, $data['password']);
+        $password = $this->userPasswordHasher->hashPassword($user, $user->getPassword());
         $user->setPassword($password);
         $user->getUserStats()->setLastPasswordChangedAt(new DateTimeImmutable());
 
