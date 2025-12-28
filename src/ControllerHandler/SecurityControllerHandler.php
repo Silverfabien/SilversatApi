@@ -34,7 +34,7 @@ readonly class SecurityControllerHandler
         private UserStatsRepository $userStatsRepository,
     ) {}
 
-    public function createUser(User $user): bool
+    public function createUser(User $user, string $url): bool
     {
         // Create User
         $password = $this->userPasswordHasher->hashPassword($user, $user->getPassword());
@@ -75,9 +75,19 @@ readonly class SecurityControllerHandler
         // Create UserStats
         $userStats = new UserStats();
         $userStats->setUser($user);
+        $userStats->setRegisterOn($url);
 
         $this->userStatsRepository->save($userStats);
 
+        return true;
+    }
+
+    public function login(User $user, string $url): bool
+    {
+        $user->getUserStats()->setLastLoginAt(new DateTimeImmutable());
+        $user->getUserStats()->setLoginOn($url);
+
+        $this->userRepository->update($user);
         return true;
     }
 

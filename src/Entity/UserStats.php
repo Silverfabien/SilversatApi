@@ -18,15 +18,6 @@ class UserStats
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $lastPageVisited = null;
-
-    #[ORM\Column]
-    private ?\DateTimeImmutable $lastPageVisitedAt = null;
-
-    #[ORM\Column]
-    private ?int $numberPageVisited = null;
-
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastLoginAt = null;
 
@@ -42,11 +33,14 @@ class UserStats
     #[ORM\Column]
     private ?int $numberOfBanned = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $registerOn = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $loginOn = null;
+
     public function __construct()
     {
-        $this->lastPageVisited = '/';
-        $this->lastPageVisitedAt = new DateTimeImmutable();
-        $this->numberPageVisited = 0;
         $this->numberOfBlocked = 0;
         $this->numberOfBanned = 0;
         $this->loginAttempts = 0;
@@ -65,42 +59,6 @@ class UserStats
     public function setUser(User $user): static
     {
         $this->user = $user;
-
-        return $this;
-    }
-
-    public function getLastPageVisited(): ?string
-    {
-        return $this->lastPageVisited;
-    }
-
-    public function setLastPageVisited(string $lastPageVisited): static
-    {
-        $this->lastPageVisited = $lastPageVisited;
-
-        return $this;
-    }
-
-    public function getLastPageVisitedAt(): ?\DateTimeImmutable
-    {
-        return $this->lastPageVisitedAt;
-    }
-
-    public function setLastPageVisitedAt(\DateTimeImmutable $lastPageVisitedAt): static
-    {
-        $this->lastPageVisitedAt = $lastPageVisitedAt;
-
-        return $this;
-    }
-
-    public function getNumberPageVisited(): ?int
-    {
-        return $this->numberPageVisited;
-    }
-
-    public function setNumberPageVisited(int $numberPageVisited): static
-    {
-        $this->numberPageVisited = $numberPageVisited;
 
         return $this;
     }
@@ -161,6 +119,30 @@ class UserStats
     public function setNumberOfBanned(int $numberOfBanned): static
     {
         $this->numberOfBanned = $numberOfBanned;
+
+        return $this;
+    }
+
+    public function getRegisterOn(): ?string
+    {
+        return $this->registerOn;
+    }
+
+    public function setRegisterOn(string $registerOn): static
+    {
+        $this->registerOn = $registerOn;
+
+        return $this;
+    }
+
+    public function getLoginOn(): ?string
+    {
+        return $this->loginOn;
+    }
+
+    public function setLoginOn(string $loginOn): static
+    {
+        $this->loginOn = $loginOn;
 
         return $this;
     }

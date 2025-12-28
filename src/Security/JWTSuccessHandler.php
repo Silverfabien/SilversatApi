@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\ControllerHandler\SecurityControllerHandler;
 use App\Entity\User;
 use DateTimeImmutable;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
@@ -9,31 +10,30 @@ use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-class JWTSuccessHandler implements AuthenticationSuccessHandlerInterface
+readonly class JWTSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
-    private JWTTokenManagerInterface $jwtManager;
-    private EventDispatcherInterface $eventDispatcher;
-    private string $cookieDomain;
-
     public function __construct(
-        JWTTokenManagerInterface $jwtManager,
-        EventDispatcherInterface $eventDispatcher,
-        string $cookieDomain
-    ) {
-        $this->jwtManager = $jwtManager;
-        $this->eventDispatcher = $eventDispatcher;
-        $this->cookieDomain = $cookieDomain;
-    }
+        private JWTTokenManagerInterface $jwtManager,
+        private EventDispatcherInterface $eventDispatcher,
+        private string $cookieDomain,
+        private SecurityControllerHandler $securityControllerHandler,
+        private RequestStack $requestStack
+    ) {}
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token): Response
     {
         /* @var User $user */
         $user = $token->getUser();
+
+        $request = $this->requestStack->getCurrentRequest();
+        $data = json_decode($request->getContent(), true);
+        $this->securityControllerHandler->login($user, $data['url']);
 
         return $this->generateJwtResponse($user);
     }
