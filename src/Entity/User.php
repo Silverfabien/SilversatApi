@@ -105,6 +105,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $rolesAllSite;
     }
 
+    public function getRolesNameAllSites(): array
+    {
+        $rolesNameAllSites = [];
+        foreach ($this->getUserSiteRanks() as $userSiteRank) {
+            $siteName = $userSiteRank->getSite()->getName();
+            $roleName = $userSiteRank->getRole()->getRolename();
+
+            $rolesNameAllSites[$siteName] = $roleName;
+        }
+
+        return $rolesNameAllSites;
+    }
+
     /**
      * @see PasswordAuthenticatedUserInterface
      */

@@ -40,6 +40,7 @@ readonly class JWTCreateSubscriber implements EventSubscriberInterface
 
         $data['id'] = $user->getId();
         $data['roles'] = $user->getRolesAllSite();
+        $data['rolenames'] = $user->getRolesNameAllSites();
         $data['email'] = $user->getEmail();
         $data['username'] = $user->getUsername();
         $data['iv'] = $userSecurity->getIv();

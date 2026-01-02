@@ -9,6 +9,9 @@ enum RoleEnum: string
     case MODERATOR = 'ROLE_MODERATOR';
     case ADMIN = 'ROLE_ADMIN';
 
+    // Role extérieur à l'api
+    case AUTHOR = 'ROLE_AUTHOR'; // Blog
+
     public function label(): string
     {
         return match ($this) {
@@ -16,6 +19,7 @@ enum RoleEnum: string
             self::FRIEND => 'Ami',
             self::MODERATOR => 'Modérateur',
             self::ADMIN => 'Administrateur',
+            self::AUTHOR => 'Auteur',
         };
     }
 }
