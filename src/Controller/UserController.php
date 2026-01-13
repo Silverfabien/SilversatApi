@@ -6,12 +6,15 @@ use App\ControllerHandler\UserControllerHandler;
 use App\Entity\User;
 use App\Form\Security\ResetPasswordType;
 use App\Form\Security\UserEditType;
+use App\Message\UserUpdated;
 use App\Repository\UserRepository;
 use App\Security\JWTSuccessHandler;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api', name: 'api_')]
@@ -23,8 +26,11 @@ final class UserController extends AbstractController
         private readonly JWTSuccessHandler $jwtSuccessHandler
     ) {}
 
+    /**
+     * @throws ExceptionInterface
+     */
     #[Route('/user_edit', name: 'user_edit', methods: ['POST'])]
-    public function userEdit(Request $request): JsonResponse
+    public function userEdit(Request $request, MessageBusInterface $messageBus): JsonResponse
     {
         $user = $this->decodeJwt($request);
         $data = json_decode($request->getContent(), true);
@@ -42,6 +48,8 @@ final class UserController extends AbstractController
         }
 
         $this->userControllerHandler->userEdit($user, $request->toArray());
+
+        $messageBus->dispatch(new UserUpdated($user->getId(), $user->getUsername(), $user->getEmail()));
 
         return $this->generateResponse(
             'Vos informations on bien été modifié.',
