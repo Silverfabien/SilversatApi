@@ -77,6 +77,7 @@ final class SecurityController extends AbstractController
         $this->sendVerificationMail($user);
 
         // Permet la connexion automatiquement après inscription.
+        $user = $this->userRepository->findOneBy(['id' => $user->getId()]);
         $this->securityControllerHandler->login($user, $data['url']);
         $response = $jwtSuccessHandler->generateJwtResponse($user);
         $content = json_decode($response->getContent(), true);
