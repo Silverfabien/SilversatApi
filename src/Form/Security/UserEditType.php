@@ -4,9 +4,11 @@ namespace App\Form\Security;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 use Symfony\Component\Validator\Constraints\Length;
 
 class UserEditType extends AbstractType
@@ -34,23 +36,18 @@ class UserEditType extends AbstractType
                     )
                 ]
             ])
-            ->add('firstname', TextType::class, [
-                'label' => "Votre prénom",
-                'required' => true,
+            ->add('picture', FileType::class, [
+                'mapped' => false,
+                'required' => false,
                 'constraints' => [
-                    new Length(
-                        max: 50,
-                        maxMessage: "Votre prénom ne peut pas contenir plus de {{ limit }} caractères."
-                    )
-                ]
-            ])
-            ->add('lastname', TextType::class, [
-                'label' => "Votre nom",
-                'required' => true,
-                'constraints' => [
-                    new Length(
-                        max: 50,
-                        maxMessage: "Votre nom ne peut pas contenir plus de {{ limit }} caractères."
+                    new File(
+                        maxSize: '2M',
+                        mimeTypes: [
+                            'image/jpeg',
+                            'image/png',
+                            'image/webp'
+                        ],
+                        mimeTypesMessage: "Format d'image invalide"
                     )
                 ]
             ])

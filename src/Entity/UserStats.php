@@ -36,7 +36,7 @@ class UserStats
     #[ORM\Column(length: 255)]
     private ?string $registerOn = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $loginOn = null;
 
     public function __construct()

@@ -5,8 +5,11 @@ namespace App\Entity;
 use App\Repository\UserInfoRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UserInfoRepository::class)]
+#[Vich\Uploadable]
 class UserInfo
 {
     #[ORM\Id]
@@ -18,12 +21,6 @@ class UserInfo
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $firstname = null;
-
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $lastname = null;
-
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -32,6 +29,12 @@ class UserInfo
 
     #[ORM\Column(length: 50)]
     private ?string $ip = null;
+
+    #[Vich\UploadableField(mapping: 'user_pictures', fileNameProperty: 'pictureName')]
+    private ?File $pictureFile = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $pictureName = null;
 
     public function __construct()
     {
@@ -52,30 +55,6 @@ class UserInfo
     public function setUser(User $user): static
     {
         $this->user = $user;
-
-        return $this;
-    }
-
-    public function getFirstname(): ?string
-    {
-        return $this->firstname;
-    }
-
-    public function setFirstname(?string $firstname): static
-    {
-        $this->firstname = $firstname;
-
-        return $this;
-    }
-
-    public function getLastname(): ?string
-    {
-        return $this->lastname;
-    }
-
-    public function setLastname(?string $lastname): static
-    {
-        $this->lastname = $lastname;
 
         return $this;
     }
@@ -112,6 +91,34 @@ class UserInfo
     public function setIp(string $ip): static
     {
         $this->ip = $ip;
+
+        return $this;
+    }
+
+    public function getPictureFile(): ?File
+    {
+        return $this->pictureFile;
+    }
+
+    public function setPictureFile(?File $pictureFile): static
+    {
+        $this->pictureFile = $pictureFile;
+
+        if (null !== $pictureFile) {
+            $this->updatedAt = new DateTimeImmutable();
+        }
+
+        return $this;
+    }
+
+    public function getPictureName(): ?string
+    {
+        return $this->pictureName;
+    }
+
+    public function setPictureName(?string $pictureName): static
+    {
+        $this->pictureName = $pictureName;
 
         return $this;
     }

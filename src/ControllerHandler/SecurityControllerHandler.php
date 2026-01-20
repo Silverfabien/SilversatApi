@@ -40,7 +40,6 @@ readonly class SecurityControllerHandler
         $password = $this->userPasswordHasher->hashPassword($user, $user->getPassword());
         $user->setPassword($password);
 
-
         // Create UserSiteRank
         $allSites = $this->siteRepository->findAll();
         $defaultRank = $this->rankRepository->findOneBy(['role' => 'ROLE_USER']);

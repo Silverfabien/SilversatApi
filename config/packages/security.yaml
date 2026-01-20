@@ -43,6 +43,7 @@ security:
     # Note: Only the *first* matching rule is applied
     access_control:
         - { path: ^/api/check_token, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/users/\d+/avatar, roles: PUBLIC_ACCESS }
 
 when@test:
     security:
