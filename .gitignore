@@ -11,6 +11,7 @@
 
 ###> other ###
 .idea
+/public/uploads/pictures/users
 ###< other ###
 
 ###> lexik/jwt-authentication-bundle ###

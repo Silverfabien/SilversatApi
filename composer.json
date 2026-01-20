@@ -27,7 +27,8 @@
         "symfony/validator": "7.4.*",
         "symfony/yaml": "7.4.*",
         "twig/extra-bundle": "^3.22",
-        "twig/intl-extra": "^3.22"
+        "twig/intl-extra": "^3.22",
+        "vich/uploader-bundle": "^2.9"
     },
     "require-dev": {
         "symfony/maker-bundle": "^1.65"

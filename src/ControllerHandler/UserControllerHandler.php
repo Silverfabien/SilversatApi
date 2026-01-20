@@ -17,8 +17,6 @@ readonly class UserControllerHandler
     public function userEdit(User $user, array $data): bool
     {
         $userInfo = $user->getUserInfo();
-        $userInfo->setFirstname($data['firstname']);
-        $userInfo->setLastname($data['lastname']);
         $userInfo->setUpdatedAt(new DateTimeImmutable());
 
         $user->setUsername($data['username']);

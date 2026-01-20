@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\ControllerHandler\SecurityControllerHandler;
 use App\Entity\User;
+use App\Entity\UserInfo;
 use App\Form\Security\ForgotPasswordType;
 use App\Form\Security\RegisterType;
 use App\Message\UserCreated;
@@ -12,10 +13,10 @@ use App\Repository\UserSecurityRepository;
 use App\Repository\UserStatsRepository;
 use App\Security\JWTSuccessHandler;
 use DateTimeImmutable;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -187,8 +188,7 @@ final class SecurityController extends AbstractController
     #[Route('/reset_forgot_password/{token}', name: 'reset_forgot_password', methods: ['POST'])]
     public function resetForgotPassword(
         Request $request,
-        string $token,
-        FormFactoryInterface $formFactory,
+        string $token
     ): JsonResponse
     {
         $user = $this->userSecurityRepository->findOneBy(['resetPasswordToken' => $token]);
@@ -214,6 +214,40 @@ final class SecurityController extends AbstractController
         $this->securityControllerHandler->resetForgotPassword($user->getUser());
 
         return new JsonResponse(['message' => "Votre mot de passe à été modifié avec succès."]);
+    }
+
+    #[Route('/user/avatar', name: 'user_avatar', methods: ['POST'])]
+    public function uploadAvatar(
+        Request $request,
+        EntityManagerInterface $em
+    ): JsonResponse
+    {
+        $jwt = $request->cookies->get('jwt_token');
+        $decodeJwt = json_decode(base64_decode(explode('.', $jwt)[1]), true);
+        $user = $this->userRepository->findOneBy(['email' => $decodeJwt['email']]);
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $file = $request->files->get('picture');
+        if (!$file) {
+            return new JsonResponse(['error' => 'No file provided'], 400);
+        }
+
+        $userInfo = $user->getUserInfo();
+        if (!$userInfo) {
+            $userInfo = new UserInfo();
+            $user->setUserInfo($userInfo);
+        }
+
+        $userInfo->setPictureFile($file);
+        $em->flush();
+
+        return new JsonResponse([
+            'message' => 'Avatar mis à jour',
+            'avatar' => '/uploads/pictures/users/'.$userInfo->getPictureName(),
+        ]);
     }
 
     // PRIVATE FUNCTIONS
