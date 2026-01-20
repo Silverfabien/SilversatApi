@@ -1,0 +1,8 @@
+vich_uploader:
+    db_driver: orm
+
+    mappings:
+        user_pictures:
+            uri_prefix: /uplaods/pictures/users
+            upload_destination: '%kernel.project_dir%/public/uploads/pictures/users'
+            namer: vich_uploader.namer_uniqid

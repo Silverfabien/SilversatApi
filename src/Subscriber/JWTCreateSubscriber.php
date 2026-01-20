@@ -3,7 +3,6 @@
 namespace App\Subscriber;
 
 use App\Entity\User;
-use App\Repository\UserInfoRepository;
 use App\Repository\UserModRepository;
 use App\Repository\UserSecurityRepository;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
@@ -15,8 +14,7 @@ readonly class JWTCreateSubscriber implements EventSubscriberInterface
     public function __construct(
         private ParameterBagInterface $params,
         private UserModRepository $userModRepository,
-        private UserSecurityRepository $userSecurityRepository,
-        private UserInfoRepository $userInfoRepository
+        private UserSecurityRepository $userSecurityRepository
     )
     {
     }
@@ -36,7 +34,6 @@ readonly class JWTCreateSubscriber implements EventSubscriberInterface
 
         $userMod = $this->userModRepository->findOneBy(['user' => $user]);
         $userSecurity = $this->userSecurityRepository->findOneBy(['user' => $user]);
-        $userInfo = $this->userInfoRepository->findOneBy(['user' => $user]);
 
         $data['id'] = $user->getId();
         $data['roles'] = $user->getRolesAllSite();
@@ -46,8 +43,6 @@ readonly class JWTCreateSubscriber implements EventSubscriberInterface
         $data['iv'] = $userSecurity->getIv();
 
         $otherInfo = [
-            "firstname" => $userInfo?->getFirstname() ?? null,
-            "lastname" => $userInfo?->getLastname() ?? null,
             "status" => $userMod->getStatus(),
             "accountDeleted" => $userMod->isAccountDeleted()
         ];
