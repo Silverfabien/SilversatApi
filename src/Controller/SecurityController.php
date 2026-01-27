@@ -103,26 +103,44 @@ final class SecurityController extends AbstractController
         return $response;
     }
 
-    #[Route('/confirm/{token}', name: 'confirm', methods: ['GET', 'POST'])]
-    public function confirmationAccount(string $token, Request $request): JsonResponse
+    #[Route('/confirm/{token}', name: 'confirm', methods: ['POST'])]
+    public function confirmationAccount(string $token): JsonResponse
     {
-        $jwt = $request->cookies->get('jwt_token');
+        /* @var User|null $userConnected */
+        $userConnected = $this->getUser();
 
-        if (!$jwt) {
-            return new JsonResponse(['message' => "Veuillez vous connecter pour valider votre compte.", 'jwt' => $jwt], Response::HTTP_BAD_REQUEST);
+        if (!$userConnected) {
+            return new JsonResponse([
+                'code' => 'NOT_AUTHENTICATED',
+                'message' => "Veuillez vous connecter pour valider votre compte."
+            ], Response::HTTP_BAD_REQUEST);
         }
 
-        $user = $this->userSecurityRepository->findOneBy(['confirmationToken' => $token]);
+        $userToken = $this->userSecurityRepository->findOneBy(['confirmationToken' => $token]);
 
-        if (!$user) {
-            return new JsonResponse(['message' => "Votre compte à déjà été vérifié."], Response::HTTP_BAD_REQUEST);
-        } elseif ($user->getConfirmationTokenExpirationAt() < new DateTimeImmutable()) {
-            return new JsonResponse(['message' => "Token invalide ou expiré."], Response::HTTP_BAD_REQUEST);
+        if (!$userToken) {
+            return new JsonResponse([
+                'code' => 'ALREADY_VERIFIED_OR_INVALID_TOKEN',
+                'message' => "Votre compte à déjà été vérifié ou le token est invalide."
+            ], Response::HTTP_NOT_FOUND);
+        } elseif ($userConnected->getId() !== $userToken->getId()) {
+            return new JsonResponse([
+                'code' => 'TOKEN_DOES_NOT_MATCH_USER',
+                'message' => "Token invalide ou expiré."
+            ]);
+        } elseif ($userToken->getConfirmationTokenExpirationAt() < new DateTimeImmutable()) {
+            return new JsonResponse([
+                'code' => 'TOKEN_EXPIRED',
+                'message' => "Token invalide ou expiré."
+            ], Response::HTTP_BAD_REQUEST);
         }
 
-        $this->securityControllerHandler->verifyAccount($user);
+        $this->securityControllerHandler->verifyAccount($userToken);
 
-        return new JsonResponse(['message' => "Votre compte à bien été validé."], Response::HTTP_OK);
+        return new JsonResponse([
+            'code' => 'VERIFIED',
+            'message' => "Votre compte à bien été validé."
+        ], Response::HTTP_OK);
     }
 
     #[Route('/remove_account/{token}', name: 'remove_account', methods: ['GET', 'DELETE'])]
@@ -146,22 +164,32 @@ final class SecurityController extends AbstractController
     /**
      * @throws TransportExceptionInterface
      */
-    #[Route('/reply', name: 'reply', methods: ['GET', 'POST'])]
-    public function replyMail(Request $request): JsonResponse
+    #[Route('/reply', name: 'reply', methods: ['POST'])]
+    public function replyMail(): JsonResponse
     {
-        $jwt = $request->cookies->get('jwt_token');
-        $decodeJwt = json_decode(base64_decode(explode('.', $jwt)[1]), true);
-        $user = $this->userRepository->findOneBy(['email' => $decodeJwt['email']]);
+        /** @var User|null $user */
+        $user = $this->getUser();
 
         if (!$user) {
-            return new JsonResponse(['message' => "Veuillez vous connecter pour renvoyer le mail de validation."], Response::HTTP_BAD_REQUEST);
-        } elseif (!$user->getUserSecurity()->getConfirmationToken()) {
-            return new JsonResponse(['message' => "Votre compte est déjà vérifié."], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse([
+                'code' => 'NOT_AUTHENTICATED',
+                'message' => "Veuillez vous connecter pour renvoyer le mail de validation."
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$user->getUserSecurity()->getConfirmationToken()) {
+            return new JsonResponse([
+                'code' => 'ALREADY_VERIFIED',
+                'message' => "Votre compte est déjà vérifié."
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $this->sendVerificationMail($user);
 
-        return new JsonResponse(['message' => "Email de confirmation renvoyé."], Response::HTTP_OK);
+        return new JsonResponse([
+            'code' => 'MAIL_SENT',
+            'message' => "Email de confirmation renvoyé."
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -199,7 +227,7 @@ final class SecurityController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
 
-        $form = $this->createForm(ForgotPasswordType::class, $user);
+        $form = $this->createForm(ForgotPasswordType::class, $user->getUser());
         $form->submit($data);
 
         if (!$form->isValid()) {
@@ -250,6 +278,27 @@ final class SecurityController extends AbstractController
         ]);
     }
 
+    #[Route('/account/is_verify', name: 'is_verify', methods: ['GET'])]
+    public function isVerify(): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$user) {
+            return new JsonResponse([
+                'authenticated' => false,
+                'verified' => false,
+                'error' => 'Veuillez vous connecter pour vérifié votre compte.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        return new JsonResponse([
+            'authenticated' => true,
+            'verified' => $user->isVerify(),
+            'success' => $user->isVerify() ? "Compte déjà vérifié." : "Compte non vérifié."
+            ], Response::HTTP_OK);
+    }
+
     // PRIVATE FUNCTIONS
 
     /**
@@ -270,8 +319,8 @@ final class SecurityController extends AbstractController
         $userStats = $this->userStatsRepository->findOneBy(['user' => $user->getId()]);
 
         $url = $userStats->getRegisterOn();
-        $urlConfirm = $url.'/confirm/'.$userSecurity->getConfirmationToken();
-        $urlRemove = $url.'/remove-account/'.$userSecurity->getConfirmationToken();
+        $urlConfirm = $url.'/account/confirm/'.$userSecurity->getConfirmationToken();
+        $urlRemove = $url.'/account/remove/'.$userSecurity->getConfirmationToken();
 
         $from = $this->params->get('email_from');
 
@@ -298,7 +347,7 @@ final class SecurityController extends AbstractController
         $userStats = $this->userStatsRepository->findOneBy(['user' => $user->getId()]);
 
         $url = $userStats->getRegisterOn();
-        $urlForgotPassword = $url.'/reset-forgot-password/'.$userSecurity->getResetPasswordToken();
+        $urlForgotPassword = $url.'/?resetToken='.$userSecurity->getResetPasswordToken();
 
         $from = $this->params->get('email_from');
 
