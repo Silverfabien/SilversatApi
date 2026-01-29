@@ -44,7 +44,10 @@ final class UserController extends AbstractController
                 $errors[] = $error->getMessage();
             }
 
-            return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse([
+                'message' => $errors,
+                'type' => 'error'
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $this->userControllerHandler->userEdit($user, $request->toArray());
@@ -52,6 +55,7 @@ final class UserController extends AbstractController
         $messageBus->dispatch(new UserUpdated($user->getId(), $user->getUsername(), $user->getEmail()));
 
         return $this->generateResponse(
+            'success',
             'Vos informations on bien été modifié.',
             $user
         );
@@ -72,12 +76,16 @@ final class UserController extends AbstractController
                 $errors[] = $error->getMessage();
             }
 
-            return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse([
+                'message' => $errors,
+                'type' => 'error'
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $this->userControllerHandler->resetPassword($user);
 
         return $this->generateResponse(
+            'success',
             'Votre mot de passe a bien été modifié.',
             $user
         );
@@ -96,9 +104,10 @@ final class UserController extends AbstractController
         return $user;
     }
 
-    private function generateResponse(string $message, User $user): JsonResponse
+    private function generateResponse(string $type, string $message, User $user): JsonResponse
     {
         $response = $this->jwtSuccessHandler->generateJwtResponse($user);
+        $content['type'] = $type;
         $content['message'] = $message;
         $response->setData($content);
         $response->setStatusCode(Response::HTTP_OK);

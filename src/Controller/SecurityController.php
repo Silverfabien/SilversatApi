@@ -68,7 +68,10 @@ final class SecurityController extends AbstractController
                 $errors[] = $error->getMessage();
             }
 
-            return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse([
+                'message' => $errors,
+                'type' => 'error'
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $this->securityControllerHandler->createUser($user, $request->toArray());
@@ -83,6 +86,7 @@ final class SecurityController extends AbstractController
         $response = $jwtSuccessHandler->generateJwtResponse($user);
         $content = json_decode($response->getContent(), true);
         $content['message'] = "Compte créer avec succès.";
+        $content['type'] = "success";
         $response->setData($content);
         $response->setStatusCode(Response::HTTP_CREATED);
 
@@ -93,10 +97,16 @@ final class SecurityController extends AbstractController
     public function logout(Request $request): JsonResponse
     {
         if (!$request->cookies->get('jwt_token')) {
-            return new JsonResponse(["message" => "Vous êtes déjà déconnecté."], Response::HTTP_OK);
+            return new JsonResponse([
+                "message" => "Vous êtes déjà déconnecté.",
+                "type" => "info"
+            ], Response::HTTP_OK);
         }
 
-        $response = new JsonResponse(["message" => "Vous êtes dorénavant déconnecté."], Response::HTTP_OK);
+        $response = new JsonResponse([
+            "message" => "Vous êtes dorénavant déconnecté.",
+            "type" => "success"
+        ], Response::HTTP_OK);
 
         $this->deleteCookie($response);
 
@@ -112,6 +122,7 @@ final class SecurityController extends AbstractController
         if (!$userConnected) {
             return new JsonResponse([
                 'code' => 'NOT_AUTHENTICATED',
+                'type' => 'warn',
                 'message' => "Veuillez vous connecter pour valider votre compte."
             ], Response::HTTP_BAD_REQUEST);
         }
@@ -121,16 +132,19 @@ final class SecurityController extends AbstractController
         if (!$userToken) {
             return new JsonResponse([
                 'code' => 'ALREADY_VERIFIED_OR_INVALID_TOKEN',
+                'type' => 'warn',
                 'message' => "Votre compte à déjà été vérifié ou le token est invalide."
             ], Response::HTTP_NOT_FOUND);
         } elseif ($userConnected->getId() !== $userToken->getId()) {
             return new JsonResponse([
                 'code' => 'TOKEN_DOES_NOT_MATCH_USER',
+                'type' => 'warn',
                 'message' => "Token invalide ou expiré."
             ]);
         } elseif ($userToken->getConfirmationTokenExpirationAt() < new DateTimeImmutable()) {
             return new JsonResponse([
                 'code' => 'TOKEN_EXPIRED',
+                'type' => 'warn',
                 'message' => "Token invalide ou expiré."
             ], Response::HTTP_BAD_REQUEST);
         }
@@ -139,6 +153,7 @@ final class SecurityController extends AbstractController
 
         return new JsonResponse([
             'code' => 'VERIFIED',
+            'type' => 'success',
             'message' => "Votre compte à bien été validé."
         ], Response::HTTP_OK);
     }
@@ -149,12 +164,18 @@ final class SecurityController extends AbstractController
         $user = $this->userSecurityRepository->findOneBy(['confirmationToken' => $token]);
 
         if (!$user) {
-            return new JsonResponse(['message' => "Token invalide ou expiré."], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse([
+                'message' => "Token invalide ou expiré.",
+                'type' => 'warn'
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $this->securityControllerHandler->deleteAccount($user);
 
-        $response = new JsonResponse(["message" => "Vous êtes dorénavant déconnecté."], Response::HTTP_OK);
+        $response = new JsonResponse([
+            "message" => "Votre compte à bien été supprimé.",
+            "type" => "success"
+        ], Response::HTTP_OK);
 
         $this->deleteCookie($response);
 
@@ -173,14 +194,16 @@ final class SecurityController extends AbstractController
         if (!$user) {
             return new JsonResponse([
                 'code' => 'NOT_AUTHENTICATED',
-                'message' => "Veuillez vous connecter pour renvoyer le mail de validation."
+                'message' => "Veuillez vous connecter pour renvoyer le mail de validation.",
+                'type' => 'warn'
             ], Response::HTTP_UNAUTHORIZED);
         }
 
         if (!$user->getUserSecurity()->getConfirmationToken()) {
             return new JsonResponse([
                 'code' => 'ALREADY_VERIFIED',
-                'message' => "Votre compte est déjà vérifié."
+                'message' => "Votre compte est déjà vérifié.",
+                'type' => 'info'
             ], Response::HTTP_BAD_REQUEST);
         }
 
@@ -188,7 +211,8 @@ final class SecurityController extends AbstractController
 
         return new JsonResponse([
             'code' => 'MAIL_SENT',
-            'message' => "Email de confirmation renvoyé."
+            'message' => "Email de confirmation renvoyé.",
+            'type' => 'success'
         ], Response::HTTP_OK);
     }
 
@@ -202,6 +226,7 @@ final class SecurityController extends AbstractController
         $email = $data['email'];
         $user = $this->userRepository->findOneBy(['email' => $email]);
         $msg = ["message" => "Si un compte correspond, un email vous sera envoyer avec le lien de réinitialisation de votre mot de passe."];
+        $msg['type'] = "info";
 
         if (!$user) {
             return new JsonResponse($msg, Response::HTTP_OK);
@@ -222,7 +247,10 @@ final class SecurityController extends AbstractController
         $user = $this->userSecurityRepository->findOneBy(['resetPasswordToken' => $token]);
 
         if (!$user) {
-            return new JsonResponse(["message" => "Token invalide ou expiré."], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse([
+                "message" => "Token invalide ou expiré.",
+                "type" => "warn"
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $data = json_decode($request->getContent(), true);
@@ -236,12 +264,18 @@ final class SecurityController extends AbstractController
                 $errors[] = $error->getMessage();
             }
 
-            return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse([
+                'message' => $errors,
+                'type' => 'error'
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $this->securityControllerHandler->resetForgotPassword($user->getUser());
 
-        return new JsonResponse(['message' => "Votre mot de passe à été modifié avec succès."]);
+        return new JsonResponse([
+            'message' => "Votre mot de passe à été modifié avec succès.",
+            'type' => 'success'
+        ]);
     }
 
     #[Route('/user/avatar', name: 'user_avatar', methods: ['POST'])]
@@ -255,12 +289,18 @@ final class SecurityController extends AbstractController
         $user = $this->userRepository->findOneBy(['email' => $decodeJwt['email']]);
 
         if (!$user) {
-            return new JsonResponse(['error' => 'Unauthorized'], 401);
+            return new JsonResponse([
+                'message' => 'Action non authorisé.',
+                'type' => 'error'
+            ], 401);
         }
 
         $file = $request->files->get('picture');
         if (!$file) {
-            return new JsonResponse(['error' => 'No file provided'], 400);
+            return new JsonResponse([
+                'message' => 'Aucune image trouvé.',
+                'type' => 'error'
+            ], 400);
         }
 
         $userInfo = $user->getUserInfo();
@@ -274,6 +314,7 @@ final class SecurityController extends AbstractController
 
         return new JsonResponse([
             'message' => 'Avatar mis à jour',
+            'type' => 'success',
             'avatar' => '/uploads/pictures/users/'.$userInfo->getPictureName(),
         ]);
     }
@@ -288,14 +329,16 @@ final class SecurityController extends AbstractController
             return new JsonResponse([
                 'authenticated' => false,
                 'verified' => false,
-                'error' => 'Veuillez vous connecter pour vérifié votre compte.',
+                'message' => 'Veuillez vous connecter pour vérifié votre compte.',
+                'type' => 'warn'
             ], Response::HTTP_UNAUTHORIZED);
         }
 
         return new JsonResponse([
             'authenticated' => true,
             'verified' => $user->isVerify(),
-            'success' => $user->isVerify() ? "Compte déjà vérifié." : "Compte non vérifié."
+            'success' => $user->isVerify() ? "Compte déjà vérifié." : "Compte non vérifié.",
+            'type' => $user->isVerify() ? "info" : "warn"
             ], Response::HTTP_OK);
     }
 
