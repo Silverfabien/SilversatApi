@@ -21,7 +21,6 @@ use Symfony\Component\Routing\Attribute\Route;
 final class UserController extends AbstractController
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
         private readonly UserControllerHandler $userControllerHandler,
         private readonly JWTSuccessHandler $jwtSuccessHandler
     ) {}
@@ -91,11 +90,10 @@ final class UserController extends AbstractController
         );
     }
 
-    private function decodeJwt(Request $request): ?User
+    private function decodeJwt(): ?User
     {
-        $jwt = $request->cookies->get('jwt_token');
-        $decodeJwt = json_decode(base64_decode(explode('.', $jwt)[1]), true);
-        $user = $this->userRepository->findOneBy(['email' => $decodeJwt['email']]);
+        /** @var User $user */
+        $user = $this->getUser();
 
         if (!$user) {
             return null;

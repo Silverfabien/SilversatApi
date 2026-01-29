@@ -220,11 +220,10 @@ final class SecurityController extends AbstractController
      * @throws TransportExceptionInterface
      */
     #[Route('/forgot_password', name: 'forgot_password', methods: ['POST'])]
-    public function forgotPassword(Request $request): JsonResponse
+    public function forgotPassword(): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        $email = $data['email'];
-        $user = $this->userRepository->findOneBy(['email' => $email]);
+        /** @var User $user */
+        $user = $this->getUser();
         $msg = ["message" => "Si un compte correspond, un email vous sera envoyer avec le lien de réinitialisation de votre mot de passe."];
         $msg['type'] = "info";
 
@@ -284,9 +283,8 @@ final class SecurityController extends AbstractController
         EntityManagerInterface $em
     ): JsonResponse
     {
-        $jwt = $request->cookies->get('jwt_token');
-        $decodeJwt = json_decode(base64_decode(explode('.', $jwt)[1]), true);
-        $user = $this->userRepository->findOneBy(['email' => $decodeJwt['email']]);
+        /** @var User $user */
+        $user = $this->getUser();
 
         if (!$user) {
             return new JsonResponse([
