@@ -21,4 +21,9 @@ class UserSiteRankRepository extends ServiceEntityRepository
         $this->getEntityManager()->persist($userSiteRank);
         $this->getEntityManager()->flush();
     }
+
+    public function update($userSiteRank): void
+    {
+        $this->getEntityManager()->flush();
+    }
 }
