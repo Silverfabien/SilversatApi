@@ -60,4 +60,11 @@ readonly class UserControllerHandler
 
         return true;
     }
+
+    public function hardDelete(User $user): bool
+    {
+        $this->userRepository->remove($user);
+
+        return true;
+    }
 }

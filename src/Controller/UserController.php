@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Form\Security\ResetPasswordType;
 use App\Form\Security\SoftDeletedAccountType;
 use App\Form\Security\UserEditType;
+use App\Message\UserHardDeleted;
 use App\Message\UserSoftDeleted;
 use App\Message\UserUpdated;
 use App\Security\JWTSuccessHandler;
@@ -125,6 +126,29 @@ final class UserController extends AbstractController
 
         $response = new JsonResponse([
             "message" => "Votre compte à été soft delete et vous êtes dorénavant déconnecté.",
+            "type" => "success"
+        ], Response::HTTP_OK);
+
+        $this->deleteCookie($response);
+
+        return $response;
+    }
+
+    /**
+     * @throws ExceptionInterface
+     */
+    #[Route('/hard_delete', name: 'hard_delete', methods: ['POST'])]
+    public function hardDelete(Request $request, MessageBusInterface $messageBus): JsonResponse
+    {
+        $user = $this->decodeJwt();
+        $userId = $user->getId();
+
+        $this->userControllerHandler->hardDelete($user);
+
+        $messageBus->dispatch(new UserHardDeleted($userId));
+
+        $response = new JsonResponse([
+            "message" => "Votre compte à été supprimé et vous êtes dorénavant déconnecté.",
             "type" => "success"
         ], Response::HTTP_OK);
 

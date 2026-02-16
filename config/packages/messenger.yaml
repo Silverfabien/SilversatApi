@@ -21,4 +21,5 @@ framework:
             'App\Message\UserCreated': user_events
             'App\Message\UserUpdated': user_events
             'App\Message\UserSoftDeleted': user_events
+            'App\Message\UserHardDeleted': user_events
             'App\Message\Admin\UserUpdated': user_events
