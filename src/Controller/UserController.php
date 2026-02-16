@@ -5,11 +5,15 @@ namespace App\Controller;
 use App\ControllerHandler\UserControllerHandler;
 use App\Entity\User;
 use App\Form\Security\ResetPasswordType;
+use App\Form\Security\SoftDeletedAccountType;
 use App\Form\Security\UserEditType;
+use App\Message\UserSoftDeleted;
 use App\Message\UserUpdated;
-use App\Repository\UserRepository;
 use App\Security\JWTSuccessHandler;
+use DateTimeImmutable;
+use Random\RandomException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,7 +35,7 @@ final class UserController extends AbstractController
     #[Route('/user_edit', name: 'user_edit', methods: ['POST'])]
     public function userEdit(Request $request, MessageBusInterface $messageBus): JsonResponse
     {
-        $user = $this->decodeJwt($request);
+        $user = $this->decodeJwt();
         $data = json_decode($request->getContent(), true);
 
         $form = $this->createForm(UserEditType::class);
@@ -63,7 +67,7 @@ final class UserController extends AbstractController
     #[Route('/reset_password', name: 'reset_password', methods: ['POST'])]
     public function resetPassword(Request $request): JsonResponse
     {
-        $user = $this->decodeJwt($request);
+        $user = $this->decodeJwt();
         $data = json_decode($request->getContent(), true);
 
         $form = $this->createForm(ResetPasswordType::class, $user);
@@ -90,6 +94,45 @@ final class UserController extends AbstractController
         );
     }
 
+    /**
+     * @throws RandomException
+     * @throws ExceptionInterface
+     */
+    #[Route('/soft_delete', name: 'soft_delete', methods: ['POST'])]
+    public function softDelete(Request $request, MessageBusInterface $messageBus): JsonResponse
+    {
+        $user = $this->decodeJwt();
+        $data = json_decode($request->getContent(), true);
+
+        $form = $this->createForm(SoftDeletedAccountType::class);
+        $form->submit($data);
+
+        if (!$form->isValid()) {
+            $errors = [];
+            foreach ($form->getErrors(true) as $error) {
+                $errors[] = $error->getMessage();
+            }
+
+            return new JsonResponse([
+                'message' => $errors,
+                'type' => 'error'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->userControllerHandler->softDelete($user, $data);
+
+        $messageBus->dispatch(new UserSoftDeleted($user->getId(), $user->getUsername(), $user->getEmail()));
+
+        $response = new JsonResponse([
+            "message" => "Votre compte à été soft delete et vous êtes dorénavant déconnecté.",
+            "type" => "success"
+        ], Response::HTTP_OK);
+
+        $this->deleteCookie($response);
+
+        return $response;
+    }
+
     private function decodeJwt(): ?User
     {
         /** @var User $user */
@@ -111,5 +154,22 @@ final class UserController extends AbstractController
         $response->setStatusCode(Response::HTTP_OK);
 
         return $response;
+    }
+
+    private function deleteCookie(Response $response): void
+    {
+        $response->headers->setCookie(
+            Cookie::create(
+                'jwt_token',
+                null,
+                new DateTimeImmutable('-1 hour'),
+                '/',
+                '127.0.0.1',
+                true,
+                true,
+                false,
+                Cookie::SAMESITE_NONE
+            )
+        );
     }
 }
